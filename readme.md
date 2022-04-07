@@ -94,7 +94,7 @@ Simple fetch functions to make API request to a running Pact Server and retrieve
  * @property nonce {string} - nonce value to ensure unique hash - default to current time
  * @property envData {object} - JSON of data in command - not required
  * @property meta {object} - public meta information, see mkMeta
- * @property networkId {object} network identifier of where the cmd is executed.
+ * @property networkId {string} network identifier of where the cmd is executed.
  */
 ```
 ```
@@ -109,7 +109,7 @@ Simple fetch functions to make API request to a running Pact Server and retrieve
  * @property rollback {bool} - Indicates if this continuation is a rollback/cancel - required for "cont"
  * @property envData {object} - JSON of data in command - not required
  * @property meta {object} - public meta information, see mkMeta
- * @property networkId {object} network identifier of where the cmd is executed.
+ * @property networkId {string} network identifier of where the cmd is executed.
  */
 ```
 ```
@@ -255,16 +255,19 @@ Pact.fetch.spv([<spvCmd:object>], <apiHost:string>) -> "[proof base64url value]"
 Simple functions to interact with Chainweaver wallet (https://github.com/kadena-io/chainweaver) and its signing API.
 
 ```
- * A signingCmd Object to send to signing API
- * @typedef {Object} signingCmd - cmd to send to signing API
- * @property pactCode {string} - Pact code to execute - required
- * @property caps {array or object} - Pact capability to be signed, see mkCap - required
- * @property envData {object} - JSON of data in command - optional
- * @property sender {string} - sender field in meta, see mkMeta - optional
- * @property chainId {string} - chainId field in meta, see mkMeta - optional
- * @property gasLimit {number} - gasLimit field in meta, see mkMeta - optional
- * @property nonce {string} - nonce value for ensuring unique hash, default to current time - optional
- **/
+* A signingCmd Object to send to signing API
+* @typedef {Object} signingCmd - cmd to send to signing API
+* @property pactCode {string} - Pact code to execute - required
+* @property caps {array or object} - Pact capability to be signed, see mkCap - required
+* @property envData {object} - JSON of data in command - optional
+* @property sender {string} - sender field in meta, see mkMeta - optional
+* @property chainId {string} - chainId field in meta, see mkMeta - optional
+* @property gasLimit {number} - gasLimit field in meta, see mkMeta - optional
+* @property gasPrice {string} - gasPrice field in meta, see mkMeta - optional
+* @property signingPubKey {string} - public key of the signer - optional
+* @property networkId {string} - network identifier of where the cmd is executed - optional
+* @property nonce {string} - nonce value for ensuring unique hash - optional
+**/
 ```
 
 ```
@@ -303,3 +306,85 @@ You probably want to use the `Pact.simple` functions instead of these.
 Pact.api.mkSingleCmd([signatures],{cmd-object}) -> {"hash":<string>, "sigs":[signatures], "cmd":cmd}
 Pact.api.mkPublicSend([cmd]) -> {"cmds":[cmd]} \\ send as POST to /api/poll
 ```
+
+### Events
+
+Events from transaction outputs are flattened into a single array or stream. Each item contains a height property that indicates the block height at which it occurred.
+
+##### Example of an event object:
+
+```
+{
+  params: [
+    '4677a09ea1602e4e09fe01eb1196cf47c0f44aa44aac903d5f61be7da3425128',
+    'f6357785d8b147c1fac66cdbd607a0b1208d62996d7d62cc92856d0ab229bea2',
+    10462.28
+  ],
+  name: 'TRANSFER',
+  module: { namespace: null, name: 'coin' },
+  moduleHash: 'ut_J_ZNkoyaPUEJhiwVeWnkSQn9JT9sQCWKdjjVVrWo',
+  height: 1511601
+}
+```
+##### Event Function Parameters
+```
+/**
+ * @param {number|string} chainId - a chain id that is valid for the network
+ * @param {number[]} chainIds - array of chain ids
+ * @param {number} depth - confirmation depth. Only blocks at this depth are returned
+ * @param {string} blockHash - block hash
+ * @param {number} blockHeight - block height
+ * @param {number} start - start block height
+ * @param {number} end - end block height
+ * @param {number} n - maximual number of blocks from which events are returned. The actual number of returned events may be lower.
+ * @param {eventCallback} callback - function that is called for each event
+ * @param {string} [network="mainnet01"] - chainweb network
+ * @param {string} [host="https://api.chainweb.com"] - chainweb api host
+ ```
+#### Events By Height
+
+```javascript
+Pact.event.height(chainId, blockHeight, network, host)
+```
+
+
+#### Events By Block Hash
+
+```javascript
+Pact.event.blockHash(chainId, blockHash, network, host)
+```
+
+#### Recent Events
+
+These functions return items from recent blocks in the block history starting
+at a given depth.
+
+The depth parameter is useful to avoid receiving items from orphaned blocks.
+
+```javascript
+Pact.event.recent(chainId, depth, n, network, host)
+```
+
+#### Range of Events
+
+These functions query events from a range of block heights and return the
+result as an array.
+
+```javascript
+Pact.event.range(chainId, start, end, network, host)
+```
+
+
+#### Event Stream
+
+Streams are backed by EventSource clients that retrieve header update
+events from the Chainweb API.
+
+```javascript
+const es = Pact.event.stream(depth, chainIdS, callback, network, host);
+```
+
+Streams are online and only return items from blocks that got mined after the
+stream was started. They are thus useful for prompt notification of new
+items. In order of exhaustively querying all, including old, items, one
+should also use `range` or `recent` queries for the respective type of item.

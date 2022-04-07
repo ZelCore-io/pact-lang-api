@@ -1,26 +1,29 @@
 {
   "name": "pact-lang-api",
-  "version": "4.1.2",
-  "description": "hashing and signing functions needed to interact with Pact 3.0 and greater",
+  "version": "4.3.3",
+  "description": "JS API for Pact on Kadena Chainweb",
   "main": "pact-lang-api.js",
   "scripts": {
     "start:pact": "rm -Rf ./log && mkdir log && pact --serve server.conf",
-    "test": "tape ./test/*.test.js",
+    "test": "tape ./test/*[^event].test.js && jest ./test.event.test.js",
     "build": "browserify pact-lang-api.js -o pact-lang-api.min.js && browserify pact-lang-api-global.js -o pact-lang-api-global.min.js"
   },
   "repository": {
     "type": "git",
-    "url": "github.com/kadena-io/pact"
+    "url": "github.com/kadena-io/pact-lang-api"
   },
   "author": "Will Martino",
   "license": "BSD3",
   "dependencies": {
-    "base64-url": "^2.3.3",
     "blakejs": "^1.0.1",
-    "blue-tape": "^1.0.0",
     "browserify": "^16.5.1",
-    "node-fetch": "^2.6.0",
-    "tape": "^4.13.2",
+    "chainweb": "^2.0.3",
+    "node-fetch": "^2.6.6",
     "tweetnacl": "^0.14.5"
+  },
+  "devDependencies": {
+    "blue-tape": "^1.0.0",
+    "jest": "^27.4.3",
+    "tape": "^4.13.2"
   }
 }
